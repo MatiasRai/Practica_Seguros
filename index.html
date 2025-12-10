@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa de Dependencias - Pólizas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #eff6ff 0%, #e0e7ff 100%);
+            padding: 24px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+        .header p {
+            color: #6b7280;
+            font-size: 14px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        .stat-card h3 {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        .stat-card .number {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        .stat-card.vigentes .number { color: #059669; }
+        .stat-card.anuladas .number { color: #dc2626; }
+        .filters {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+        .filters label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 12px;
+        }
+        .filter-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        .filter-btn.active {
+            color: white;
+        }
+        .filter-btn.todos { background: #e5e7eb; color: #374151; }
+        .filter-btn.todos.active { background: #4f46e5; }
+        .filter-btn.vigente { background: #e5e7eb; color: #374151; }
+        .filter-btn.vigente.active { background: #059669; }
+        .filter-btn.anulada { background: #e5e7eb; color: #374151; }
+        .filter-btn.anulada.active { background: #dc2626; }
+        .filter-btn:hover:not(.active) {
+            background: #d1d5db;
+        }
+        .contratante {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+        .contratante-header {
+            background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);
+            padding: 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+        .contratante-header:hover {
+            background: linear-gradient(135deg, #4338ca 0%, #2563eb 100%);
+        }
+        .contratante-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .contratante-info h3 {
+            color: white;
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .contratante-info p {
+            color: #bfdbfe;
+            font-size: 13px;
+        }
+        .badge {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .polizas-container {
+            padding: 20px;
+            background: #f9fafb;
+            display: none;
+        }
+        .polizas-container.expanded {
+            display: block;
+        }
+        .poliza {
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #4f46e5;
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+        }
+        .poliza:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .poliza-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .poliza-numero {
+            font-weight: 700;
+            color: #1f2937;
+            font-size: 16px;
+        }
+        .estado-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .estado-badge.vigente {
+            background: #d1fae5;
+            color: #059669;
+        }
+        .estado-badge.anulada {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        .poliza-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 8px;
+            font-size: 14px;
+        }
+        .poliza-details p {
+            color: #6b7280;
+        }
+        .poliza-details strong {
+            color: #374151;
+            font-weight: 600;
+        }
+        .chevron {
+            transition: transform 0.2s;
+            color: white;
+        }
+        .chevron.expanded {
+            transform: rotate(90deg);
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Mapa de Dependencias: Contratantes y Pólizas</h1>
+            <p>Visualización de relaciones entre contratantes y sus pólizas de seguro</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Contratantes</h3>
+                <div class="number" id="stat-contratantes">3</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Pólizas</h3>
+                <div class="number" id="stat-polizas">7</div>
+            </div>
+            <div class="stat-card vigentes">
+                <h3>Vigentes</h3>
+                <div class="number" id="stat-vigentes">6</div>
+            </div>
+            <div class="stat-card anuladas">
+                <h3>Anuladas</h3>
+                <div class="number" id="stat-anuladas">1</div>
+            </div>
+        </div>
+
+        <div class="filters">
+            <label>Filtrar por Estado:</label>
+            <div class="filter-buttons">
+                <button class="filter-btn todos active" onclick="filterPolizas('todos')">Todos</button>
+                <button class="filter-btn vigente" onclick="filterPolizas('Vigente')">Vigentes</button>
+                <button class="filter-btn anulada" onclick="filterPolizas('Anulada')">Anuladas</button>
+            </div>
+        </div>
+
+        <div id="contratantes-container"></div>
+    </div>
+
+    <script>
+        const data = [
+            {
+                rut: '76389835-0',
+                nombre: 'SOCIEDAD DE SERVICIOS DE RECURSOS HUMANOS EN BASE A GUARDIAS',
+                polizas: [
+                    { numero: '100087083', ramo: 'Incendio', producto: 'Incendio Hogar Web', estado: 'Vigente', primaBruta: '4,72 UF' },
+                    { numero: '100087085', ramo: 'Incendio', producto: 'Incendio Hogar Web', estado: 'Vigente', primaBruta: '4,72 UF' },
+                    { numero: '300539347', ramo: 'Vehiculos', producto: 'Auto Individual Liviano', estado: 'Vigente', primaBruta: '14,67 UF' }
+                ]
+            },
+            {
+                rut: '10565410-3',
+                nombre: 'HECTOR ANDRES HORACIO MIRANDA CONCHA',
+                polizas: [
+                    { numero: '300539431', ramo: 'Vehiculos', producto: 'Auto Individual Liviano', estado: 'Anulada', primaBruta: '0,00 UF', patente: 'LSLK73' },
+                    { numero: '300539681', ramo: 'Vehiculos', producto: 'Auto Individual Liviano', estado: 'Vigente', primaBruta: '22,53 UF', patente: 'LSLK73' },
+                    { numero: '300539908', ramo: 'Vehiculos', producto: 'Auto Individual Liviano', estado: 'Vigente', primaBruta: '14,94 UF', patente: 'KFZX70' }
+                ]
+            },
+            {
+                rut: '76336789-4',
+                nombre: 'PRODUCCIONES TRECIENTOS SETENTA LIMITADA',
+                polizas: [
+                    { numero: '500014049', ramo: 'Responsabilidad Civil', producto: 'Responsabilidad Civil General UF', estado: 'Vigente', primaBruta: '14,28 UF' }
+                ]
+            }
+        ];
+
+        let currentFilter = 'todos';
+
+        function renderContratantes() {
+            const container = document.getElementById('contratantes-container');
+            container.innerHTML = '';
+
+            data.forEach((contratante, index) => {
+                const filteredPolizas = currentFilter === 'todos' 
+                    ? contratante.polizas 
+                    : contratante.polizas.filter(p => p.estado === currentFilter);
+
+                if (filteredPolizas.length === 0) return;
+
+                const contratanteDiv = document.createElement('div');
+                contratanteDiv.className = 'contratante';
+                contratanteDiv.innerHTML = `
+                    <div class="contratante-header" onclick="toggleContratante(${index})">
+                        <div class="contratante-info">
+                            <span class="chevron" id="chevron-${index}">▶</span>
+                            <div>
+                                <h3>${contratante.nombre}</h3>
+                                <p>RUT: ${contratante.rut}</p>
+                            </div>
+                        </div>
+                        <div class="badge">${filteredPolizas.length} póliza${filteredPolizas.length !== 1 ? 's' : ''}</div>
+                    </div>
+                    <div class="polizas-container" id="polizas-${index}">
+                        ${filteredPolizas.map(poliza => `
+                            <div class="poliza">
+                                <div class="poliza-header">
+                                    <span class="poliza-numero">Póliza #${poliza.numero}</span>
+                                    <span class="estado-badge ${poliza.estado.toLowerCase()}">${poliza.estado}</span>
+                                </div>
+                                <div class="poliza-details">
+                                    <p><strong>Ramo:</strong> ${poliza.ramo}</p>
+                                    <p><strong>Prima Bruta:</strong> ${poliza.primaBruta}</p>
+                                    <p><strong>Producto:</strong> ${poliza.producto}</p>
+                                    ${poliza.patente ? `<p><strong>Patente:</strong> ${poliza.patente}</p>` : ''}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                container.appendChild(contratanteDiv);
+            });
+        }
+
+        function toggleContratante(index) {
+            const container = document.getElementById(`polizas-${index}`);
+            const chevron = document.getElementById(`chevron-${index}`);
+            container.classList.toggle('expanded');
+            chevron.classList.toggle('expanded');
+        }
+
+        function filterPolizas(filter) {
+            currentFilter = filter;
+            
+            // Update button states
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Update stats
+            updateStats();
+            
+            // Re-render
+            renderContratantes();
+        }
+
+        function updateStats() {
+            let totalPolizas = 0;
+            let vigentes = 0;
+            let anuladas = 0;
+
+            data.forEach(contratante => {
+                const filteredPolizas = currentFilter === 'todos' 
+                    ? contratante.polizas 
+                    : contratante.polizas.filter(p => p.estado === currentFilter);
+                
+                totalPolizas += filteredPolizas.length;
+                vigentes += filteredPolizas.filter(p => p.estado === 'Vigente').length;
+                anuladas += filteredPolizas.filter(p => p.estado === 'Anulada').length;
+            });
+
+            const visibleContratantes = data.filter(c => {
+                const filtered = currentFilter === 'todos' ? c.polizas : c.polizas.filter(p => p.estado === currentFilter);
+                return filtered.length > 0;
+            }).length;
+
+            document.getElementById('stat-contratantes').textContent = visibleContratantes;
+            document.getElementById('stat-polizas').textContent = totalPolizas;
+            document.getElementById('stat-vigentes').textContent = vigentes;
+            document.getElementById('stat-anuladas').textContent = anuladas;
+        }
+
+        // Initialize
+        renderContratantes();
+    </script>
+</body>
+</html>
